@@ -51,6 +51,10 @@ var InitDemo = function () {
 		alert('Your browser does not support WebGL');
 	}
 
+	// Inisialisasi matriks transformasi dan lokasi uniform
+	var identityMatrix = new Float32Array(16);
+	mat4.identity(identityMatrix);
+
 	// Digunakan untuk memberikan Warna Pada Background
 	gl.clearColor(0.75, 0.85, 0.8, 1.0);
 	// Digunakan untuk membersihkan Buffer-Rendering pada WebGL
@@ -195,12 +199,9 @@ var InitDemo = function () {
 	matViewUniformLocation = gl.getUniformLocation(program, 'uMView');
 	matProjUniformLocation = gl.getUniformLocation(program, 'uMProj');
 
-	// Inisialisasi matriks transformasi dan lokasi uniform
-	var identityMatrix = new Float32Array(16);
 	var worldMatrix = new Float32Array(16);
 	var viewMatrix = new Float32Array(16);
 	var projMatrix = new Float32Array(16);
-	mat4.identity(identityMatrix);
 	mat4.identity(worldMatrix);
 	mat4.lookAt(viewMatrix, [0, 0, -8], [0, 0, 0], [0, 1, 0]);
 	mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 0.1, 1000.0);
@@ -213,6 +214,7 @@ var InitDemo = function () {
 	var xTranslation = 0.0;
 	var yTranslation = 0.0;
 	var zTranslation = 0.0;
+
 
 	var sliderX = document.getElementById('x-slider');
 	var sliderY = document.getElementById('y-slider');
@@ -234,31 +236,44 @@ var InitDemo = function () {
 		zTranslation = parseFloat(sliderZ.value);
 	});
 
+	var MovingObject = false;
+	document.addEventListener('keydown', function (event) {
+		if (event.key === 'a') {
+			MovingObject = !MovingObject;
+		}
+	});
+
 	//Program Render Berulang
 	var loop = function () {
-		angle = performance.now() / 1000 / 6 * 2 * Math.PI;
+		if (!MovingObject) {
+			angle = performance.now() / 1000 / 6 * 2 * Math.PI;
 
-		// Apply the translation and rotation to the world matrix
-		mat4.identity(worldMatrix);
-		mat4.translate(worldMatrix, worldMatrix, [xTranslation, yTranslation, zTranslation]);
-		mat4.rotate(worldMatrix, worldMatrix, angle, [0, 1, 0]);
+			// Apply the translation and rotation to the world matrix
+			mat4.identity(worldMatrix);
+			mat4.translate(worldMatrix, worldMatrix, [xTranslation, yTranslation, zTranslation]);
+			mat4.rotate(worldMatrix, worldMatrix, angle, [0, 1, 0]);
 
-		// Apply the rotation to the world matrix
-		mat4.rotate(worldMatrix, worldMatrix, angle / 4, [0, 1, 0]);
+			// Apply the rotation to the world matrix
+			mat4.rotate(worldMatrix, worldMatrix, angle, [0, 1, 0]);
 
-		gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
-		gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
+			gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
+			gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 
-		gl.clearColor(0.75, 0.85, 0.8, 1.0);
-		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+			gl.clearColor(0.75, 0.85, 0.8, 1.0);
+			gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
-		gl.bindTexture(gl.TEXTURE_2D, donutTexture);
-		gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, donutTexture);
+			gl.activeTexture(gl.TEXTURE0);
 
-		// Ganti untuk menggambar donat
-		gl.drawElements(gl.TRIANGLES, donutIndices.length, gl.UNSIGNED_SHORT, 0);
+			// Ganti untuk menggambar donat
+			gl.drawElements(gl.TRIANGLES, donutIndices.length, gl.UNSIGNED_SHORT, 0);
 
-		requestAnimationFrame(loop);
+			requestAnimationFrame(loop);
+
+		} else {
+			requestAnimationFrame(loop);
+		}
+
 	};
 	requestAnimationFrame(loop);
 };
