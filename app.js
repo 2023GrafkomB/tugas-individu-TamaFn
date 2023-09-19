@@ -237,6 +237,14 @@ var InitDemo = function () {
 	});
 
 	var MovingObject = false;
+
+	playbutton.addEventListener('click', function () {
+		// Toggle nilai boolean untuk menghentikan atau melanjutkan gerakan
+		MovingObject = !MovingObject;
+	});
+
+
+
 	document.addEventListener('keydown', function (event) {
 		if (event.key === 'a') {
 			MovingObject = !MovingObject;
