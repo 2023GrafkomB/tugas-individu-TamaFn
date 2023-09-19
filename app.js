@@ -51,37 +51,6 @@ var InitDemo = function () {
 		alert('Your browser does not support WebGL');
 	}
 
-	// Membuat Slider
-	var xSlider = document.getElementById('x-slider');
-	var ySlider = document.getElementById('y-slider');
-	var zSlider = document.getElementById('z-slider');
-
-	// Inisialisasi matriks transformasi dan lokasi uniform
-	var worldMatrix = new Float32Array(16);
-	var matWorldUniformLocation;
-	var matViewUniformLocation;
-	var matProjUniformLocation;
-	var identityMatrix = new Float32Array(16);
-	mat4.identity(identityMatrix);
-
-	xSlider.addEventListener('input', function () {
-		var xValue = parseFloat(xSlider.value);
-		mat4.identity(worldMatrix); // Reset worldMatrix ke identitas
-		mat4.translate(worldMatrix, worldMatrix, [xValue, 0, 0]);
-	});
-
-	ySlider.addEventListener('input', function () {
-		var yValue = parseFloat(ySlider.value);
-		mat4.identity(worldMatrix); // Reset worldMatrix ke identitas
-		mat4.translate(worldMatrix, worldMatrix, [0, yValue, 0]);
-	});
-
-	zSlider.addEventListener('input', function () {
-		var zValue = parseFloat(zSlider.value);
-		mat4.identity(worldMatrix); // Reset worldMatrix ke identitas
-		mat4.scale(worldMatrix, worldMatrix, [zValue, zValue, zValue]);
-	});
-
 	// Digunakan untuk memberikan Warna Pada Background
 	gl.clearColor(0.75, 0.85, 0.8, 1.0);
 	// Digunakan untuk membersihkan Buffer-Rendering pada WebGL
@@ -135,8 +104,8 @@ var InitDemo = function () {
 
 	var numSides = 32; // Jumlah sisi donat
 	var numRings = 16; // Jumlah cincin donat
-	var donutRadius = 2.0; // Radius donat
-	var tubeRadius = 0.5; // Radius tabung donat
+	var donutRadius = 1.75; // Radius donat
+	var tubeRadius = 0.75; // Radius tabung donat
 
 	for (var ring = 0; ring <= numRings; ring++) {
 		var theta = (ring / numRings) * Math.PI * 2;
@@ -226,9 +195,12 @@ var InitDemo = function () {
 	matViewUniformLocation = gl.getUniformLocation(program, 'uMView');
 	matProjUniformLocation = gl.getUniformLocation(program, 'uMProj');
 
+	// Inisialisasi matriks transformasi dan lokasi uniform
+	var identityMatrix = new Float32Array(16);
 	var worldMatrix = new Float32Array(16);
 	var viewMatrix = new Float32Array(16);
 	var projMatrix = new Float32Array(16);
+	mat4.identity(identityMatrix);
 	mat4.identity(worldMatrix);
 	mat4.lookAt(viewMatrix, [0, 0, -8], [0, 0, 0], [0, 1, 0]);
 	mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 0.1, 1000.0);
@@ -237,18 +209,45 @@ var InitDemo = function () {
 	gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 	gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
 
-	var xRotationMatrix = new Float32Array(16);
-	var yRotationMatrix = new Float32Array(16);
-
 	var angle = 0;
+	var xTranslation = 0.0;
+	var yTranslation = 0.0;
+	var zTranslation = 0.0;
+
+	var sliderX = document.getElementById('x-slider');
+	var sliderY = document.getElementById('y-slider');
+	var sliderZ = document.getElementById('z-slider');
+
+	// Add event listeners to the sliders
+	sliderX.addEventListener('input', function () {
+		// Update the X translation based on the slider value
+		xTranslation = parseFloat(sliderX.value);
+	});
+
+	sliderY.addEventListener('input', function () {
+		// Update the Y translation based on the slider value
+		yTranslation = parseFloat(sliderY.value);
+	});
+
+	sliderZ.addEventListener('input', function () {
+		// Update the Z translation based on the slider value
+		zTranslation = parseFloat(sliderZ.value);
+	});
 
 	//Program Render Berulang
 	var loop = function () {
 		angle = performance.now() / 1000 / 6 * 2 * Math.PI;
-		mat4.rotate(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
-		mat4.rotate(xRotationMatrix, identityMatrix, angle / 4, [1, 0, 0]);
-		mat4.mul(worldMatrix, yRotationMatrix, xRotationMatrix);
+
+		// Apply the translation and rotation to the world matrix
+		mat4.identity(worldMatrix);
+		mat4.translate(worldMatrix, worldMatrix, [xTranslation, yTranslation, zTranslation]);
+		mat4.rotate(worldMatrix, worldMatrix, angle, [0, 1, 0]);
+
+		// Apply the rotation to the world matrix
+		mat4.rotate(worldMatrix, worldMatrix, angle / 4, [0, 1, 0]);
+
 		gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
+		gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 
 		gl.clearColor(0.75, 0.85, 0.8, 1.0);
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
